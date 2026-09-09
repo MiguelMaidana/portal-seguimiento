@@ -1,0 +1,520 @@
+/* ============================================================
+   Tablero personal — sistema visual
+   Metáfora: tiras de progreso encastradas en rieles.
+   ============================================================ */
+
+:root {
+  --ground: #dedcd5;
+  --rail: #cfccc3;
+  --rail-edge: #b9b5aa;
+  --strip: #fbfaf7;
+  --ink: #1f2421;
+  --ink-soft: #5c635c;
+  --ink-faint: #8b8f88;
+
+  --signal: #a8321e;
+  --hold: #2f6f7e;
+
+  --area-teal: #12666b;
+  --area-ochre: #9a6b12;
+  --area-plum: #6b3556;
+  --area-slate: #3a5570;
+  --area-moss: #4a6b32;
+  --area-grey: #6b6b66;
+
+  --gap: 0.75rem;
+  --radius: 2px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-archivo), system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+}
+
+a {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.narrow {
+  font-family: var(--font-archivo-narrow), var(--font-archivo), sans-serif;
+}
+
+/* ---------- Contenedor ---------- */
+
+.shell {
+  max-width: 62rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 5rem;
+}
+
+/* ---------- Cabecera: una línea de estado, no un héroe numérico ---------- */
+
+.board-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1.25rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: 1.5rem;
+}
+
+.board-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.board-date {
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  margin-right: auto;
+}
+
+.tallies {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+.tally b {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.tally-signal b {
+  color: var(--signal);
+}
+
+.board-nav {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.board-nav form {
+  display: inline;
+}
+
+.board-nav button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.login-shell {
+  min-height: calc(100vh - 6.5rem);
+  display: grid;
+  place-items: center;
+}
+
+.login-card {
+  width: min(100%, 28rem);
+  padding: 2rem;
+  border-top: 3px solid var(--ink);
+  background: var(--strip);
+  box-shadow: 0 1rem 3rem rgb(31 36 33 / 12%);
+}
+
+.login-card h1 {
+  margin: 0.15rem 0 0.5rem;
+  font-size: clamp(2rem, 10vw, 3.5rem);
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.login-form {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.login-form label {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 650;
+}
+
+.login-form input {
+  width: 100%;
+  border: 1px solid var(--rail-edge);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  background: white;
+  color: var(--ink);
+  font: inherit;
+}
+
+.login-form button {
+  border: 0;
+  border-radius: var(--radius);
+  padding: 0.8rem 1rem;
+  background: var(--ink);
+  color: white;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.login-form button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.form-error {
+  margin: 0;
+  color: var(--signal);
+}
+
+.board-nav a {
+  color: var(--ink-soft);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 1px;
+}
+
+.board-nav a:hover,
+.board-nav a[aria-current="page"] {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
+
+/* ---------- Captura rápida: un solo campo, cero fricción ---------- */
+
+.capture {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.75rem;
+}
+
+.capture input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  padding: 0.6rem 0.7rem;
+  color: var(--ink);
+  background: var(--strip);
+  border: 1px solid var(--rail-edge);
+  border-radius: var(--radius);
+}
+
+.capture input::placeholder {
+  color: var(--ink-faint);
+}
+
+.capture button {
+  font: inherit;
+  font-weight: 500;
+  padding: 0.6rem 1.1rem;
+  color: var(--strip);
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.capture button:hover:not(:disabled) {
+  background: #333a35;
+}
+
+.capture button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ---------- Riel: el agrupador. La etiqueta vive en el lomo. ---------- */
+
+.rail {
+  margin-bottom: 1.5rem;
+}
+
+.rail-label {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0 0 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.rail-count {
+  font-weight: 400;
+  color: var(--ink-faint);
+}
+
+.rail-slots {
+  background: var(--rail);
+  border: 1px solid var(--rail-edge);
+  border-radius: var(--radius);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rail-signal .rail-label {
+  color: var(--signal);
+}
+
+.rail-signal .rail-slots {
+  background: #cfc0ba;
+  border-color: #b9998f;
+}
+
+/* ---------- Tira ---------- */
+
+.strip {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  background: var(--strip);
+  border-radius: 1px;
+  padding: 0.5rem 0.65rem 0.5rem 0.85rem;
+  box-shadow: inset 1px 0 0 rgba(0, 0, 0, 0.06);
+}
+
+/* Canto de color: el área, codificada en el borde físico de la tira */
+.strip::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--strip-accent, var(--area-grey));
+}
+
+.strip-done {
+  font: inherit;
+  flex: none;
+  width: 1.05rem;
+  height: 1.05rem;
+  margin-top: 0.15rem;
+  background: transparent;
+  border: 1.5px solid var(--ink-faint);
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--ink);
+  line-height: 1;
+  padding: 0;
+}
+
+.strip-done:hover:not(:disabled) {
+  border-color: var(--ink);
+  background: var(--rail);
+}
+
+.strip-done:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.strip-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.strip-title {
+  display: block;
+  overflow-wrap: break-word;
+}
+
+.strip-high .strip-title {
+  font-weight: 600;
+}
+
+.strip-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.7rem;
+  margin-top: 0.15rem;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+
+.strip-area {
+  color: var(--strip-accent, var(--ink-soft));
+  font-weight: 500;
+}
+
+.strip-late {
+  color: var(--signal);
+  font-weight: 500;
+}
+
+.strip-hold {
+  color: var(--hold);
+}
+
+.strip-detail {
+  margin: 0.2rem 0 0;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.strip-leaving {
+  opacity: 0.35;
+}
+
+/* ---------- Vacío: una invitación, no un estado de ánimo ---------- */
+
+.empty {
+  border: 1px dashed var(--rail-edge);
+  border-radius: var(--radius);
+  padding: 1.5rem 1rem;
+  color: var(--ink-soft);
+}
+
+.empty p {
+  margin: 0;
+  max-width: 44ch;
+}
+
+/* ---------- Métricas ---------- */
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 1px;
+  background: var(--rail-edge);
+  border: 1px solid var(--rail-edge);
+  border-radius: var(--radius);
+  margin-bottom: 2rem;
+}
+
+.metric {
+  background: var(--strip);
+  padding: 0.8rem 0.9rem;
+}
+
+.metric-value {
+  display: block;
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.metric-signal .metric-value {
+  color: var(--signal);
+}
+
+.metric-label {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+
+.breakdown {
+  margin-bottom: 2rem;
+}
+
+.breakdown h2 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+}
+
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: minmax(6rem, 10rem) 1fr auto;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.88rem;
+}
+
+.bar-track {
+  height: 0.6rem;
+  background: var(--rail);
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: var(--bar-color, var(--area-slate));
+}
+
+.bar-value {
+  color: var(--ink-soft);
+  min-width: 1.5rem;
+  text-align: right;
+}
+
+.spark {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 3rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.spark li {
+  flex: 1;
+  background: var(--area-moss);
+  border-radius: 1px;
+  min-height: 2px;
+}
+
+.spark li[data-zero="true"] {
+  background: var(--rail);
+}
+
+/* ---------- Movimiento: solo como respuesta a una acción ---------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  .strip,
+  .strip-leaving {
+    transition: opacity 160ms ease-out;
+  }
+}
+
+@media (max-width: 34rem) {
+  .board-date {
+    margin-right: 0;
+    width: 100%;
+  }
+
+  .bar-row {
+    grid-template-columns: minmax(5rem, 8rem) 1fr auto;
+  }
+}
