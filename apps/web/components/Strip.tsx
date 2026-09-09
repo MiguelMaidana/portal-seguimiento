@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import {
   type LineaBrief,
+  type TareaExpandida,
   diasDesdeHoy,
   fechaRelativaLegible,
 } from "@tablero/core";
@@ -17,7 +18,7 @@ const COLOR_AREA: Record<string, string> = {
   grey: "var(--area-grey)",
 };
 
-export function Strip({ tarea }: { tarea: LineaBrief }) {
+export function Strip({ tarea }: { tarea: LineaBrief | TareaExpandida }) {
   const [pendiente, iniciar] = useTransition();
   const [saliendo, setSaliendo] = useState(false);
 

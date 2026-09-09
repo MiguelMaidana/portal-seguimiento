@@ -366,6 +366,42 @@ a {
   cursor: default;
 }
 
+/* ---------- Pestañas: filtro por estado en /tareas ---------- */
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-5);
+}
+
+.tab {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--slate);
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  padding: var(--sp-1) var(--sp-3);
+  text-decoration: none;
+  transition:
+    border-color var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease),
+    background var(--t-fast) var(--ease);
+}
+
+.tab:hover {
+  border-color: var(--navy);
+  color: var(--navy);
+}
+
+.tab-activa,
+.tab-activa:hover {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: var(--white);
+}
+
 /* ---------- Riel: el agrupador. La etiqueta vive en el lomo. ---------- */
 
 .rail {

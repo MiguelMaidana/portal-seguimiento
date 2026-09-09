@@ -65,6 +65,7 @@ export default async function Tablero() {
           <Link href="/" aria-current="page">
             Hoy
           </Link>
+          <Link href="/tareas">Tareas</Link>
           <Link href="/metricas">Métricas</Link>
           <form action={logout}>
             <button type="submit">Salir</button>

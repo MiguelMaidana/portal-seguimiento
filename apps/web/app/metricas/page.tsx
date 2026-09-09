@@ -63,6 +63,7 @@ export default async function Metricas() {
         <p className="board-date narrow">Últimos 30 días</p>
         <nav className="board-nav narrow">
           <Link href="/">Hoy</Link>
+          <Link href="/tareas">Tareas</Link>
           <Link href="/metricas" aria-current="page">
             Métricas
           </Link>
