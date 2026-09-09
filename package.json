@@ -11,6 +11,9 @@
     "build": "pnpm --filter @tablero/web build",
     "lint": "pnpm --filter @tablero/web lint",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm --filter @tablero/core test"
+    "test": "pnpm --filter @tablero/core test",
+    "supabase:start": "pnpm dlx supabase@2.117.0 start",
+    "supabase:status": "pnpm dlx supabase@2.117.0 status",
+    "supabase:stop": "pnpm dlx supabase@2.117.0 stop"
   }
 }

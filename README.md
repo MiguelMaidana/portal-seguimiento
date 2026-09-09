@@ -78,6 +78,31 @@ pnpm dev
 
 Abrí `http://localhost:3000` e ingresá con el usuario creado.
 
+### Supabase local con Docker
+
+Para trabajar sin conectarte al proyecto remoto, iniciá Docker Desktop y
+levantá el stack local:
+
+```bash
+pnpm supabase:start
+pnpm supabase:status
+```
+
+La primera ejecución descarga las imágenes y aplica automáticamente las
+migraciones. En `apps/web/.env.local`, usá los valores informados por
+`supabase:status`: `API URL`, `Publishable key` y `Service role key`. Configurá
+además un `ADMIN_EMAIL` y un `MCP_TOKEN` exclusivamente locales.
+
+El panel de Supabase Studio queda en `http://127.0.0.1:55323`. Desde
+**Authentication → Users** creá el usuario que declaraste en `ADMIN_EMAIL`.
+La aplicación sigue disponible en `http://localhost:3000`.
+
+Cuando termines:
+
+```bash
+pnpm supabase:stop
+```
+
 ## Verificación
 
 ```bash
