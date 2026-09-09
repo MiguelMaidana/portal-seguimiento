@@ -73,7 +73,9 @@ export function Strip({ tarea }: { tarea: LineaBrief }) {
             </span>
           )}
 
-          {tarea.prioridad === "alta" && <span>prioridad alta</span>}
+          {tarea.prioridad === "alta" && (
+            <span className="badge-priority">prioridad alta</span>
+          )}
         </div>
 
         {tarea.detalle && <p className="strip-detail">{tarea.detalle}</p>}

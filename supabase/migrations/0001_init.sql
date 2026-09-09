@@ -6,6 +6,11 @@ create extension if not exists "uuid-ossp";
 create extension if not exists "unaccent";
 create extension if not exists "pg_trgm";
 
+-- En Supabase Cloud las extensiones quedan en el schema "extensions"
+-- (en local caen en "public"). Buscamos en los dos para que la migración
+-- sea idéntica en ambos entornos.
+set search_path = public, extensions;
+
 -- ------------------------------------------------------------
 -- Enums
 -- ------------------------------------------------------------
