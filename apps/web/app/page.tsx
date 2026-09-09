@@ -1,6 +1,7 @@
 import { ETIQUETA_MOTIVO } from "@tablero/core";
 import { obtenerBrief } from "@tablero/db";
 import Link from "next/link";
+import { AutoRefresh } from "../components/AutoRefresh";
 import { Capture } from "../components/Capture";
 import { Strip } from "../components/Strip";
 import { logout } from "./auth-actions";
@@ -39,6 +40,7 @@ export default async function Tablero() {
 
   return (
     <>
+      <AutoRefresh />
       <header className="board-head">
         <h1 className="board-title">Tablero</h1>
         <p className="board-date narrow">{fechaLegible(brief.fecha)}</p>

@@ -31,5 +31,10 @@ port = 55329
 
 [auth]
 enabled = true
-site_url = "http://localhost:3000"
+site_url = "https://portal-seguimiento.vercel.app"
+additional_redirect_urls = [
+  "http://localhost:3000",
+  "https://portal-seguimiento-miguel-maidanas-projects.vercel.app",
+  "https://portal-seguimiento-git-main-miguel-maidanas-projects.vercel.app",
+]
 enable_signup = false

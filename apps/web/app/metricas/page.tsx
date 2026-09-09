@@ -1,6 +1,7 @@
 import { ETIQUETA_ESTADO } from "@tablero/core";
 import { obtenerMetricas } from "@tablero/db";
 import Link from "next/link";
+import { AutoRefresh } from "../../components/AutoRefresh";
 import { logout } from "../auth-actions";
 import { requireUser } from "../../lib/auth";
 
@@ -56,6 +57,7 @@ export default async function Metricas() {
 
   return (
     <>
+      <AutoRefresh />
       <header className="board-head">
         <h1 className="board-title">Métricas</h1>
         <p className="board-date narrow">Últimos 30 días</p>
