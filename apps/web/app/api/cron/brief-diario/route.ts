@@ -1,4 +1,8 @@
-import { ETIQUETA_MOTIVO } from "@tablero/core";
+import {
+  ETIQUETA_MOTIVO,
+  diasDesdeHoy,
+  fechaRelativaLegible,
+} from "@tablero/core";
 import { obtenerBrief } from "@tablero/db";
 import { NextResponse } from "next/server";
 
@@ -16,6 +20,19 @@ const RIELES = [
   "proxima",
 ] as const;
 
+/** Mismos hex que --area-* en globals.css (el mail no puede usar variables CSS). */
+const COLOR_AREA: Record<string, string> = {
+  teal: "#0f6e74",
+  ochre: "#a66a15",
+  plum: "#7a3b67",
+  slate: "#45608a",
+  moss: "#4f7a3a",
+  grey: "#64707d",
+};
+
+const FUENTE =
+  "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+
 function fechaLegible(iso: string): string {
   const [y, m, d] = iso.split("-").map(Number);
   return new Intl.DateTimeFormat("es-AR", {
@@ -25,52 +42,108 @@ function fechaLegible(iso: string): string {
   }).format(new Date(y, m - 1, d));
 }
 
+function envoltorio(fecha: string, contenido: string): string {
+  return `
+    <body style="margin:0; background:#f7f9fc; font-family:${FUENTE};">
+      <div style="max-width:480px; margin:0 auto; padding:32px 16px;">
+        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden;">
+          <div style="background:#1a2540; padding:20px 24px;">
+            <p style="margin:0; color:#8896aa; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em;">
+              Tablero
+            </p>
+            <h1 style="margin:4px 0 0; color:#ffffff; font-size:20px; font-weight:700;">
+              ${fecha}
+            </h1>
+          </div>
+          <div style="padding:20px 24px;">
+            ${contenido}
+          </div>
+        </div>
+      </div>
+    </body>
+  `;
+}
+
+function tarjetaTarea(t: {
+  titulo: string;
+  area: string | null;
+  area_color: string | null;
+  persona: string | null;
+  estado: string;
+  prioridad: string;
+  fecha_limite: string | null;
+}): string {
+  const acento = COLOR_AREA[t.area_color ?? "grey"] ?? COLOR_AREA.grey;
+  const dias = diasDesdeHoy(t.fecha_limite);
+  const atrasada = dias !== null && dias < 0;
+
+  const meta: string[] = [];
+  if (t.area) meta.push(`<span style="color:${acento}; font-weight:500;">${t.area}</span>`);
+  if (t.persona) {
+    meta.push(
+      t.estado === "esperando"
+        ? `<span style="color:#d97706;">esperando a ${t.persona}</span>`
+        : t.persona,
+    );
+  }
+  if (t.fecha_limite) {
+    const texto = atrasada
+      ? `venció ${fechaRelativaLegible(t.fecha_limite)}`
+      : `vence ${fechaRelativaLegible(t.fecha_limite)}`;
+    meta.push(`<span style="color:${atrasada ? "#d92b2b" : "#4a5568"};">${texto}</span>`);
+  }
+  if (t.prioridad === "alta") {
+    meta.push(
+      `<span style="background:#fdeaea; color:#b01e1e; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:600;">prioridad alta</span>`,
+    );
+  }
+
+  return `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px;">
+      <tr>
+        <td width="4" style="background:${acento}; border-radius:10px 0 0 10px;"></td>
+        <td style="background:#ffffff; border:1px solid #e2e8f0; border-left:0; border-radius:0 10px 10px 0; padding:10px 14px;">
+          <div style="font-size:14px; color:#1a2540; font-weight:600;">${t.titulo}</div>
+          ${
+            meta.length
+              ? `<div style="margin-top:4px; font-size:12px; color:#4a5568;">${meta.join(" &middot; ")}</div>`
+              : ""
+          }
+        </td>
+      </tr>
+    </table>
+  `;
+}
+
 function armarHtml(brief: Awaited<ReturnType<typeof obtenerBrief>>): string {
   const { grupos, conteos } = brief;
   const fecha = fechaLegible(brief.fecha);
 
   if (conteos.total === 0) {
-    return `
-      <div style="font-family: -apple-system, Helvetica, Arial, sans-serif; color: #1a2540;">
-        <h1 style="font-size: 20px; margin: 0 0 8px;">Tablero — ${fecha}</h1>
-        <p style="color: #4a5568;">No tenés nada pendiente hoy.</p>
-      </div>
-    `;
+    return envoltorio(
+      fecha,
+      `<p style="margin:0; color:#4a5568; font-size:14px;">No tenés nada pendiente hoy.</p>`,
+    );
   }
 
   const secciones = RIELES.filter((r) => grupos[r]?.length)
     .map((r) => {
-      const items = grupos[r]
-        .map(
-          (t) => `
-            <li style="margin-bottom: 6px;">
-              <strong>${t.titulo}</strong>${t.area ? ` — ${t.area}` : ""}${
-                t.persona ? ` · ${t.persona}` : ""
-              }
-            </li>
-          `,
-        )
-        .join("");
-
+      const tarjetas = grupos[r].map(tarjetaTarea).join("");
       return `
-        <h2 style="font-size: 14px; margin: 20px 0 6px; color: ${
-          r === "vencida" ? "#d92b2b" : "#1a2540"
-        };">
-          ${ETIQUETA_MOTIVO[r] ?? r} (${grupos[r].length})
-        </h2>
-        <ul style="padding-left: 18px; margin: 0; color: #1a2540;">${items}</ul>
+        <div style="margin-bottom:20px;">
+          <h2 style="margin:0 0 8px; font-size:13px; font-weight:600; color:${
+            r === "vencida" ? "#d92b2b" : "#1a2540"
+          };">
+            ${ETIQUETA_MOTIVO[r] ?? r}
+            <span style="color:#8896aa; font-weight:400;">(${grupos[r].length})</span>
+          </h2>
+          ${tarjetas}
+        </div>
       `;
     })
     .join("");
 
-  return `
-    <div style="font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 480px;">
-      <h1 style="font-size: 20px; margin: 0 0 8px; padding-bottom: 8px; border-bottom: 2px solid #1a2540; color: #1a2540;">
-        Tablero — ${fecha}
-      </h1>
-      ${secciones}
-    </div>
-  `;
+  return envoltorio(fecha, secciones);
 }
 
 export async function GET(request: Request) {
