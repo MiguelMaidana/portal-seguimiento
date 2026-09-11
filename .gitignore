@@ -11,3 +11,6 @@ pnpm-debug.log*
 supabase/.branches/
 supabase/.temp/
 files (4).zip
+.copilot-specs-cache/
+.playwright-cli/
+openspec/

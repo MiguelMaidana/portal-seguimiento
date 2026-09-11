@@ -700,6 +700,39 @@ a {
   background: var(--border);
 }
 
+/* ---------- Toggle de vista (barras / tortas) ---------- */
+
+.toggle-vista {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  margin-bottom: var(--sp-6);
+}
+
+.toggle-vista-btn {
+  padding: var(--sp-2) var(--sp-4);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  background: var(--white);
+  color: var(--slate);
+  border: 0;
+  cursor: pointer;
+  transition:
+    background var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease);
+}
+
+.toggle-vista-btn:first-child {
+  border-right: 1px solid var(--border);
+}
+
+.toggle-vista-activo {
+  background: var(--navy);
+  color: var(--white);
+}
+
 /* ---------- Movimiento: solo como respuesta a una acción ---------- */
 
 @media (prefers-reduced-motion: reduce) {

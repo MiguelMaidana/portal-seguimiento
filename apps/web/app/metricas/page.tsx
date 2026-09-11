@@ -4,51 +4,9 @@ import Link from "next/link";
 import { AutoRefresh } from "../../components/AutoRefresh";
 import { logout } from "../auth-actions";
 import { requireUser } from "../../lib/auth";
+import { VistaMetricas } from "./VistaMetricas";
 
 export const dynamic = "force-dynamic";
-
-const PALETA = [
-  "var(--area-teal)",
-  "var(--area-ochre)",
-  "var(--area-plum)",
-  "var(--area-slate)",
-  "var(--area-moss)",
-  "var(--area-grey)",
-];
-
-function Barras({
-  titulo,
-  filas,
-}: {
-  titulo: string;
-  filas: { etiqueta: string; cantidad: number }[];
-}) {
-  if (filas.length === 0) return null;
-  const max = Math.max(...filas.map((f) => f.cantidad), 1);
-
-  return (
-    <section className="breakdown">
-      <h2>{titulo}</h2>
-      <div className="bars">
-        {filas.map((f, i) => (
-          <div className="bar-row" key={f.etiqueta}>
-            <span className="narrow">{f.etiqueta}</span>
-            <span className="bar-track">
-              <span
-                className="bar-fill"
-                style={{
-                  width: `${(f.cantidad / max) * 100}%`,
-                  ["--bar-color" as string]: PALETA[i % PALETA.length],
-                }}
-              />
-            </span>
-            <span className="bar-value narrow">{f.cantidad}</span>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
 
 export default async function Metricas() {
   await requireUser();
@@ -110,28 +68,30 @@ export default async function Metricas() {
         </ul>
       </section>
 
-      <Barras
-        titulo="Abiertas por área"
-        filas={m.abiertas_por_area.map((a) => ({
-          etiqueta: a.area,
-          cantidad: a.cantidad,
-        }))}
-      />
-
-      <Barras
-        titulo="Abiertas por estado"
-        filas={m.abiertas_por_estado.map((e) => ({
-          etiqueta: ETIQUETA_ESTADO[e.estado as never] ?? e.estado,
-          cantidad: e.cantidad,
-        }))}
-      />
-
-      <Barras
-        titulo="Esperando respuesta de"
-        filas={m.esperando_por_persona.map((p) => ({
-          etiqueta: p.persona,
-          cantidad: p.cantidad,
-        }))}
+      <VistaMetricas
+        breakdowns={[
+          {
+            titulo: "Abiertas por área",
+            datos: m.abiertas_por_area.map((a) => ({
+              etiqueta: a.area,
+              cantidad: a.cantidad,
+            })),
+          },
+          {
+            titulo: "Abiertas por estado",
+            datos: m.abiertas_por_estado.map((e) => ({
+              etiqueta: ETIQUETA_ESTADO[e.estado as never] ?? e.estado,
+              cantidad: e.cantidad,
+            })),
+          },
+          {
+            titulo: "Esperando respuesta de",
+            datos: m.esperando_por_persona.map((p) => ({
+              etiqueta: p.persona,
+              cantidad: p.cantidad,
+            })),
+          },
+        ]}
       />
     </>
   );
