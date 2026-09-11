@@ -15,6 +15,18 @@ export const ESTADOS = [
 
 export const PRIORIDADES = ["baja", "media", "alta"] as const;
 
+export const TIPOS_DOCUMENTO_PERMITIDOS = [
+  ".pptx",
+  ".ppt",
+  ".pdf",
+  ".docx",
+  ".doc",
+  ".xlsx",
+  ".xls",
+] as const;
+
+export const TAMANO_MAXIMO_DOCUMENTO_BYTES = 25 * 1024 * 1024; // 25MB
+
 export type Estado = (typeof ESTADOS)[number];
 export type Prioridad = (typeof PRIORIDADES)[number];
 
