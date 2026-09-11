@@ -718,6 +718,7 @@ a {
   background: var(--white);
   color: var(--slate);
   border: 0;
+  text-decoration: none;
   cursor: pointer;
   transition:
     background var(--t-fast) var(--ease),
