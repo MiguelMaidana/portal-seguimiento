@@ -211,23 +211,25 @@ function distancia(a: string, b: string): number {
   return previa[b.length];
 }
 
-/**
- * Resuelve un nombre suelto contra una lista de candidatos.
- * Prueba, en orden: igualdad exacta, prefijo, subcadena y por último
- * cercanía tipográfica. Devuelve null si nada supera el umbral, para que
- * el MCP prefiera preguntar antes que inventar un área.
- */
-export function resolverNombre<T>(
+interface Puntuado<T> {
+  item: T;
+  puntaje: number;
+}
+
+/** El núcleo de puntaje compartido por resolverNombre y resolverNombreConDesambiguacion. */
+function puntuarCandidatos<T>(
   consulta: string,
   candidatos: T[],
   claves: (item: T) => string[],
-): T | null {
+): Puntuado<T>[] {
   const q = normalizar(consulta);
-  if (!q) return null;
+  if (!q) return [];
 
-  let mejor: { item: T; puntaje: number } | null = null;
+  const resultados: Puntuado<T>[] = [];
 
   for (const item of candidatos) {
+    let mejorPuntaje = 0;
+
     for (const clave of claves(item)) {
       const k = normalizar(clave);
       if (!k) continue;
@@ -243,13 +245,57 @@ export function resolverNombre<T>(
         puntaje = similitud >= 0.72 ? Math.round(similitud * 65) : 0;
       }
 
-      if (puntaje > 0 && (!mejor || puntaje > mejor.puntaje)) {
-        mejor = { item, puntaje };
-      }
+      if (puntaje > mejorPuntaje) mejorPuntaje = puntaje;
     }
+
+    if (mejorPuntaje > 0) resultados.push({ item, puntaje: mejorPuntaje });
   }
 
-  return mejor ? mejor.item : null;
+  return resultados;
+}
+
+/**
+ * Resuelve un nombre suelto contra una lista de candidatos.
+ * Prueba, en orden: igualdad exacta, prefijo, subcadena y por último
+ * cercanía tipográfica. Devuelve null si nada supera el umbral, para que
+ * el MCP prefiera preguntar antes que inventar un área.
+ */
+export function resolverNombre<T>(
+  consulta: string,
+  candidatos: T[],
+  claves: (item: T) => string[],
+): T | null {
+  const puntuados = puntuarCandidatos(consulta, candidatos, claves);
+  if (puntuados.length === 0) return null;
+
+  return puntuados.reduce((mejor, actual) =>
+    actual.puntaje > mejor.puntaje ? actual : mejor,
+  ).item;
+}
+
+export type ResolucionAmbigua<T> =
+  | { tipo: "una"; item: T }
+  | { tipo: "varias"; items: T[] }
+  | { tipo: "ninguna" };
+
+/**
+ * Igual que resolverNombre, pero en vez de devolver el mejor puntaje a
+ * ciegas, devuelve todos los que empatan en el puntaje más alto — para
+ * que quien llama pueda preguntar en vez de elegir por su cuenta.
+ */
+export function resolverNombreConDesambiguacion<T>(
+  consulta: string,
+  candidatos: T[],
+  claves: (item: T) => string[],
+): ResolucionAmbigua<T> {
+  const puntuados = puntuarCandidatos(consulta, candidatos, claves);
+  if (puntuados.length === 0) return { tipo: "ninguna" };
+
+  const mejorPuntaje = Math.max(...puntuados.map((p) => p.puntaje));
+  const mejores = puntuados.filter((p) => p.puntaje === mejorPuntaje);
+
+  if (mejores.length === 1) return { tipo: "una", item: mejores[0].item };
+  return { tipo: "varias", items: mejores.map((p) => p.item) };
 }
 
 // ============================================================

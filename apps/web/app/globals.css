@@ -815,6 +815,16 @@ a {
   cursor: default;
 }
 
+.documento-exito {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--green-bg);
+  border-radius: var(--r-md);
+  color: var(--green);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+}
+
 .documentos-grid {
   display: flex;
   flex-direction: column;

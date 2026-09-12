@@ -7,62 +7,76 @@ import {
   TIPOS_DOCUMENTO_PERMITIDOS,
 } from "@tablero/core";
 import {
+  crearSubidaFirmada,
   generarLinkDescarga,
   registrarDocumento,
 } from "@tablero/db/documentos";
 import { requireUser } from "../../lib/auth";
-
-export interface SubirDocumentoState {
-  error: string | null;
-}
 
 function extension(nombreArchivo: string): string {
   const punto = nombreArchivo.lastIndexOf(".");
   return punto === -1 ? "" : nombreArchivo.slice(punto).toLowerCase();
 }
 
-export async function subirDocumento(
-  _estado: SubirDocumentoState,
-  formData: FormData,
-): Promise<SubirDocumentoState> {
+/** Nombre de archivo sin separadores de ruta, para no pisar la carpeta del bucket. */
+function nombreSeguro(nombreArchivo: string): string {
+  return nombreArchivo.replace(/[/\\]/g, "_");
+}
+
+export interface DatosSubida {
+  carpeta: string | null;
+  nombreLogico: string;
+  nombreArchivo: string;
+  tipo: string;
+  tamanoBytes: number;
+}
+
+export async function crearLinkSubida(
+  input: DatosSubida,
+): Promise<
+  | { ok: true; signedUrl: string; token: string; storagePath: string }
+  | { ok: false; error: string }
+> {
   await requireUser();
 
-  const archivo = formData.get("archivo");
-  const nombreLogico = String(formData.get("nombre_logico") ?? "").trim();
-  const carpetaCruda = String(formData.get("carpeta") ?? "").trim();
-  const carpeta = carpetaCruda || null;
-
-  if (!(archivo instanceof File) || archivo.size === 0) {
-    return { error: "Elegí un archivo para subir." };
-  }
-  if (!nombreLogico) {
-    return { error: "Ponele un nombre al documento." };
+  if (!input.nombreLogico.trim()) {
+    return { ok: false, error: "Ponele un nombre al documento." };
   }
 
-  const ext = extension(archivo.name);
-  if (
-    !(TIPOS_DOCUMENTO_PERMITIDOS as readonly string[]).includes(ext)
-  ) {
+  const ext = extension(input.nombreArchivo);
+  if (!(TIPOS_DOCUMENTO_PERMITIDOS as readonly string[]).includes(ext)) {
     return {
+      ok: false,
       error: `Tipo de archivo no permitido (${ext || "sin extensión"}). Permitidos: ${TIPOS_DOCUMENTO_PERMITIDOS.join(", ")}.`,
     };
   }
-  if (archivo.size > TAMANO_MAXIMO_DOCUMENTO_BYTES) {
-    return { error: "El archivo supera el tamaño máximo permitido (25MB)." };
+  if (input.tamanoBytes > TAMANO_MAXIMO_DOCUMENTO_BYTES) {
+    return { ok: false, error: "El archivo supera el tamaño máximo permitido (25MB)." };
   }
 
-  const storagePath = `${randomUUID()}-${archivo.name}`;
+  const storagePath = `${randomUUID()}-${nombreSeguro(input.nombreArchivo)}`;
 
   try {
-    const contenido = await archivo.arrayBuffer();
+    const { signedUrl, token } = await crearSubidaFirmada(storagePath);
+    return { ok: true, signedUrl, token, storagePath };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
+export async function confirmarSubida(
+  input: DatosSubida & { storagePath: string },
+): Promise<{ error: string | null }> {
+  await requireUser();
+
+  try {
     await registrarDocumento({
-      carpeta,
-      nombre_logico: nombreLogico,
-      nombre_archivo: archivo.name,
-      storage_path: storagePath,
-      tipo: archivo.type || "application/octet-stream",
-      tamano_bytes: archivo.size,
-      contenido,
+      carpeta: input.carpeta,
+      nombre_logico: input.nombreLogico,
+      nombre_archivo: input.nombreArchivo,
+      storage_path: input.storagePath,
+      tipo: input.tipo,
+      tamano_bytes: input.tamanoBytes,
     });
   } catch (e) {
     return { error: (e as Error).message };

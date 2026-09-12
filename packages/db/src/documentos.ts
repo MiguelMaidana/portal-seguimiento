@@ -1,6 +1,6 @@
 import "server-only";
 
-import { resolverNombre } from "@tablero/core";
+import { resolverNombreConDesambiguacion } from "@tablero/core";
 import { db } from "./client";
 
 const BUCKET = "documentos";
@@ -30,7 +30,6 @@ export interface NuevoDocumento {
   storage_path: string;
   tipo: string;
   tamano_bytes: number;
-  contenido: ArrayBuffer;
 }
 
 export async function listarCarpetas(): Promise<string[]> {
@@ -82,14 +81,27 @@ export async function listarDocumentos(
     .sort((a, b) => b.ultima.subido_en.localeCompare(a.ultima.subido_en));
 }
 
+export type ResolucionDocumento =
+  | { tipo: "una"; nombreLogico: string }
+  | { tipo: "varias"; candidatos: string[] }
+  | { tipo: "ninguna" };
+
 /**
  * Resuelve un nombre lógico por aproximación contra los que ya existen.
- * Igual mecanismo que resolverArea/resolverPersona en repo.ts.
+ * A diferencia de resolverArea/resolverPersona (que devuelven null si no
+ * hay match), acá puede haber empate entre dos versiones de nombres
+ * parecidos ("Journey de IA 2025" vs "Journey de IA 2026"), así que
+ * devolvemos "varias" para que quien llama pregunte en vez de elegir
+ * a ciegas.
  */
 export async function resolverDocumento(
   nombre: string,
-): Promise<string | null> {
-  const { data, error } = await db().from("documentos").select("nombre_logico");
+): Promise<ResolucionDocumento> {
+  const { data, error } = await db()
+    .from("documentos")
+    .select("nombre_logico")
+    .order("nombre_logico");
+
   if (error) {
     throw new Error(`No se pudo resolver el documento: ${error.message}`);
   }
@@ -97,11 +109,23 @@ export async function resolverDocumento(
   const nombres = [
     ...new Set((data ?? []).map((f) => f.nombre_logico as string)),
   ];
-  if (nombres.length === 0) return null;
+  if (nombres.length === 0) return { tipo: "ninguna" };
 
   const candidatos = nombres.map((n) => ({ nombre_logico: n }));
-  const resuelto = resolverNombre(nombre, candidatos, (c) => [c.nombre_logico]);
-  return resuelto?.nombre_logico ?? null;
+  const resuelto = resolverNombreConDesambiguacion(
+    nombre,
+    candidatos,
+    (c) => [c.nombre_logico],
+  );
+
+  if (resuelto.tipo === "ninguna") return { tipo: "ninguna" };
+  if (resuelto.tipo === "varias") {
+    return {
+      tipo: "varias",
+      candidatos: resuelto.items.map((i) => i.nombre_logico),
+    };
+  }
+  return { tipo: "una", nombreLogico: resuelto.item.nombre_logico };
 }
 
 export async function ultimaVersion(
@@ -139,17 +163,6 @@ export async function historialVersiones(
 export async function registrarDocumento(
   entrada: NuevoDocumento,
 ): Promise<Documento> {
-  const { error: errorSubida } = await db()
-    .storage.from(BUCKET)
-    .upload(entrada.storage_path, entrada.contenido, {
-      contentType: entrada.tipo,
-      upsert: false,
-    });
-
-  if (errorSubida) {
-    throw new Error(`No se pudo subir el archivo: ${errorSubida.message}`);
-  }
-
   const { data, error } = await db()
     .from("documentos")
     .insert({
@@ -172,6 +185,19 @@ export async function registrarDocumento(
   return data as Documento;
 }
 
+export async function crearSubidaFirmada(
+  storagePath: string,
+): Promise<{ signedUrl: string; token: string }> {
+  const { data, error } = await db()
+    .storage.from(BUCKET)
+    .createSignedUploadUrl(storagePath);
+
+  if (error) {
+    throw new Error(`No se pudo preparar la subida: ${error.message}`);
+  }
+  return { signedUrl: data.signedUrl, token: data.token };
+}
+
 export async function generarLinkDescarga(
   documentoId: string,
 ): Promise<{ url: string; nombreArchivo: string } | null> {
@@ -189,7 +215,7 @@ export async function generarLinkDescarga(
   const doc = fila as Documento;
   const { data, error } = await db()
     .storage.from(BUCKET)
-    .createSignedUrl(doc.storage_path, 60);
+    .createSignedUrl(doc.storage_path, 60, { download: doc.nombre_archivo });
 
   if (error) {
     throw new Error(`No se pudo generar el link: ${error.message}`);

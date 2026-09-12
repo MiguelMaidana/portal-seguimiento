@@ -77,6 +77,7 @@ export function DocumentoCard({
           <button
             type="button"
             className="documento-historial-toggle"
+            aria-expanded={abierto}
             onClick={() => setAbierto((v) => !v)}
           >
             {abierto ? "Ocultar" : "Ver"} versiones anteriores ({anteriores.length})

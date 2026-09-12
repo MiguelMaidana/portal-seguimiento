@@ -8,6 +8,7 @@ import {
   agregarTareaSchema,
   buscarTareasSchema,
   fechaRelativaLegible,
+  normalizar,
   type LineaBrief,
   type TareaExpandida,
 } from "@tablero/core";
@@ -349,14 +350,14 @@ const handler = createMcpHandler(
           "Busca documentos guardados en 'IA en TSOFT' por nombre aproximado (ej. 'Journey de IA') y, opcionalmente, por carpeta. Devuelve la versión más reciente de cada coincidencia y cuántas versiones anteriores tiene.",
         inputSchema: z.object({
           nombre: z.string().optional().describe("Nombre del documento a buscar."),
-          carpeta: z.string().optional(),
+          carpeta: z.string().optional().describe("Nombre exacto de la carpeta, si querés acotar la búsqueda a una."),
         }),
       },
       async ({ nombre, carpeta }) => {
         const documentos = await listarDocumentos(carpeta);
         const filtrados = nombre
           ? documentos.filter((d) =>
-              d.nombre_logico.toLowerCase().includes(nombre.toLowerCase()),
+              normalizar(d.nombre_logico).includes(normalizar(nombre)),
             )
           : documentos;
 
@@ -393,20 +394,28 @@ const handler = createMcpHandler(
       },
       async ({ nombre }) => {
         const resuelto = await resolverDocumento(nombre);
-        if (!resuelto) {
+
+        if (resuelto.tipo === "ninguna") {
           return texto(
             `No encontré ningún documento parecido a "${nombre}". Probá con buscar_documento para ver los nombres disponibles.`,
           );
         }
+        if (resuelto.tipo === "varias") {
+          return texto(
+            `Hay ${resuelto.candidatos.length} documentos que coinciden. ¿Cuál de estos?\n\n${resuelto.candidatos
+              .map((c) => `- ${c}`)
+              .join("\n")}`,
+          );
+        }
 
-        const version = await ultimaVersion(resuelto);
+        const version = await ultimaVersion(resuelto.nombreLogico);
         if (!version) return texto("No encontré versiones para ese documento.");
 
         const link = await generarLinkDescarga(version.id);
         if (!link) return texto("No se pudo generar el link de descarga.");
 
         return texto(
-          `Última versión de "${resuelto}": ${link.nombreArchivo}\nLink temporal (válido ~60s): ${link.url}`,
+          `Última versión de "${resuelto.nombreLogico}": ${link.nombreArchivo}\nLink temporal (válido ~60s): ${link.url}`,
         );
       },
     );
