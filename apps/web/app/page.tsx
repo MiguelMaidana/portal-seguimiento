@@ -1,10 +1,9 @@
 import { ETIQUETA_MOTIVO } from "@tablero/core";
 import { obtenerBrief } from "@tablero/db";
-import Link from "next/link";
 import { AutoRefresh } from "../components/AutoRefresh";
 import { Capture } from "../components/Capture";
+import { Nav } from "../components/Nav";
 import { Strip } from "../components/Strip";
-import { logout } from "./auth-actions";
 import { requireUser } from "../lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -61,16 +60,7 @@ export default async function Tablero() {
           )}
         </div>
 
-        <nav className="board-nav narrow">
-          <Link href="/" aria-current="page">
-            Hoy
-          </Link>
-          <Link href="/tareas">Tareas</Link>
-          <Link href="/metricas">Métricas</Link>
-          <form action={logout}>
-            <button type="submit">Salir</button>
-          </form>
-        </nav>
+        <Nav activa="hoy" />
       </header>
 
       <Capture />

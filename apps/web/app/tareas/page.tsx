@@ -2,8 +2,8 @@ import { ESTADOS, type Estado } from "@tablero/core";
 import { buscarTareas, listarAreas } from "@tablero/db";
 import Link from "next/link";
 import { AutoRefresh } from "../../components/AutoRefresh";
+import { Nav } from "../../components/Nav";
 import { Strip } from "../../components/Strip";
-import { logout } from "../auth-actions";
 import { requireUser } from "../../lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -25,25 +25,6 @@ const PESTANAS: { clave: string; etiqueta: string; estados: Estado[] }[] = [
 // Secciones de la vista "por vertical": mismos estados que las pestañas,
 // menos "todas" (no tiene sentido como sección propia).
 const SECCIONES = PESTANAS.filter((p) => p.clave !== "todas");
-
-function Nav({ activa }: { activa: "hoy" | "tareas" | "metricas" }) {
-  return (
-    <nav className="board-nav narrow">
-      <Link href="/" aria-current={activa === "hoy" ? "page" : undefined}>
-        Hoy
-      </Link>
-      <Link href="/tareas" aria-current={activa === "tareas" ? "page" : undefined}>
-        Tareas
-      </Link>
-      <Link href="/metricas" aria-current={activa === "metricas" ? "page" : undefined}>
-        Métricas
-      </Link>
-      <form action={logout}>
-        <button type="submit">Salir</button>
-      </form>
-    </nav>
-  );
-}
 
 export default async function Tareas({
   searchParams,
