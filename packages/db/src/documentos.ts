@@ -164,6 +164,9 @@ export async function registrarDocumento(
     .single();
 
   if (error) {
+    // El archivo ya se subió a Storage; si el insert falla, lo borramos
+    // para no dejar un objeto huérfano sin registro en la tabla.
+    await db().storage.from(BUCKET).remove([entrada.storage_path]);
     throw new Error(`No se pudo registrar el documento: ${error.message}`);
   }
   return data as Documento;
