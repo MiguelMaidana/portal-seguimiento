@@ -23,6 +23,12 @@ import {
   type Resolucion,
 } from "@tablero/db";
 import { hoyLocal } from "@tablero/db/client";
+import {
+  generarLinkDescarga,
+  listarDocumentos,
+  resolverDocumento,
+  ultimaVersion,
+} from "@tablero/db/documentos";
 
 export const maxDuration = 60;
 export const runtime = "nodejs";
@@ -331,6 +337,76 @@ const handler = createMcpHandler(
           `${tareas.length} tarea(s) sin clasificar:\n\n${tareas
             .map(lineaCorta)
             .join("\n")}\n\nAsignales área y fecha de foco con actualizar_tarea.`,
+        );
+      },
+    );
+
+    server.registerTool(
+      "buscar_documento",
+      {
+        title: "Buscar documento",
+        description:
+          "Busca documentos guardados en 'IA en TSOFT' por nombre aproximado (ej. 'Journey de IA') y, opcionalmente, por carpeta. Devuelve la versión más reciente de cada coincidencia y cuántas versiones anteriores tiene.",
+        inputSchema: z.object({
+          nombre: z.string().optional().describe("Nombre del documento a buscar."),
+          carpeta: z.string().optional(),
+        }),
+      },
+      async ({ nombre, carpeta }) => {
+        const documentos = await listarDocumentos(carpeta);
+        const filtrados = nombre
+          ? documentos.filter((d) =>
+              d.nombre_logico.toLowerCase().includes(nombre.toLowerCase()),
+            )
+          : documentos;
+
+        if (filtrados.length === 0) {
+          return texto("No encontré documentos que coincidan.");
+        }
+
+        return texto(
+          filtrados
+            .map((d) => {
+              const fecha = new Date(d.ultima.subido_en).toLocaleDateString(
+                "es-AR",
+              );
+              const carpetaTxt = d.carpeta ? ` (${d.carpeta})` : "";
+              const historial = d.anteriores.length
+                ? `, ${d.anteriores.length} versión(es) anterior(es)`
+                : "";
+              return `- ${d.nombre_logico}${carpetaTxt} — última: ${d.ultima.nombre_archivo}, ${fecha}${historial}`;
+            })
+            .join("\n"),
+        );
+      },
+    );
+
+    server.registerTool(
+      "descargar_documento",
+      {
+        title: "Descargar documento",
+        description:
+          "Genera un link temporal (válido ~60 segundos) para descargar la última versión de un documento de 'IA en TSOFT', identificado por nombre aproximado.",
+        inputSchema: z.object({
+          nombre: z.string().describe("Nombre del documento, ej: 'Journey de IA'."),
+        }),
+      },
+      async ({ nombre }) => {
+        const resuelto = await resolverDocumento(nombre);
+        if (!resuelto) {
+          return texto(
+            `No encontré ningún documento parecido a "${nombre}". Probá con buscar_documento para ver los nombres disponibles.`,
+          );
+        }
+
+        const version = await ultimaVersion(resuelto);
+        if (!version) return texto("No encontré versiones para ese documento.");
+
+        const link = await generarLinkDescarga(version.id);
+        if (!link) return texto("No se pudo generar el link de descarga.");
+
+        return texto(
+          `Última versión de "${resuelto}": ${link.nombreArchivo}\nLink temporal (válido ~60s): ${link.url}`,
         );
       },
     );
