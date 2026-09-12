@@ -52,9 +52,9 @@ export async function subirDocumento(
   }
 
   const storagePath = `${randomUUID()}-${archivo.name}`;
-  const contenido = await archivo.arrayBuffer();
 
   try {
+    const contenido = await archivo.arrayBuffer();
     await registrarDocumento({
       carpeta,
       nombre_logico: nombreLogico,
