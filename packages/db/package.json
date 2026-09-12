@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/repo.ts",
-    "./client": "./src/client.ts"
+    "./client": "./src/client.ts",
+    "./documentos": "./src/documentos.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
