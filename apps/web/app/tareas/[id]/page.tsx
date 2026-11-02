@@ -2,6 +2,7 @@ import { ETIQUETA_ESTADO, fechaRelativaLegible } from "@tablero/core";
 import { listarNotas, obtenerTarea } from "@tablero/db";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { BorrarNota } from "../../../components/BorrarNota";
 import { Nav } from "../../../components/Nav";
 import { NotaForm } from "../../../components/NotaForm";
 import { requireUser } from "../../../lib/auth";
@@ -84,10 +85,13 @@ export default async function FichaTarea({
           <ol className="notas">
             {notas.map((n) => (
               <li key={n.id} className="nota">
-                <span className="nota-fecha narrow">
-                  {fechaHora(n.created_at)}
-                  {n.actor === "chat" ? " · desde el chat" : ""}
-                </span>
+                <div className="nota-cabecera">
+                  <span className="nota-fecha narrow">
+                    {fechaHora(n.created_at)}
+                    {n.actor === "chat" ? " · desde el chat" : ""}
+                  </span>
+                  <BorrarNota tareaId={tarea.id} notaId={n.id} />
+                </div>
                 <p className="nota-texto">{n.texto}</p>
               </li>
             ))}

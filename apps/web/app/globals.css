@@ -1045,3 +1045,44 @@ a.strip-title:hover {
   color: var(--navy);
   white-space: pre-wrap;
 }
+
+.nota-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+.nota-borrar {
+  font: inherit;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-pill);
+  padding: 2px 8px;
+  cursor: pointer;
+  transition:
+    color var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease);
+}
+
+.nota-borrar:hover:not(:disabled) {
+  color: var(--red);
+  border-color: var(--red-light);
+}
+
+.nota-borrar-confirmar {
+  color: var(--white);
+  background: var(--red);
+  border-color: var(--red);
+}
+
+.nota-borrar-confirmar:hover:not(:disabled) {
+  color: var(--white);
+}
+
+.nota-borrar:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

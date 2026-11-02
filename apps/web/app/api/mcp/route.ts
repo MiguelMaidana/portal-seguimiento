@@ -18,6 +18,7 @@ import {
   agregarTarea,
   buscarTareas,
   completarTarea,
+  eliminarNota,
   listarAreas,
   listarNotas,
   listarPersonas,
@@ -364,7 +365,7 @@ const handler = createMcpHandler(
                     timeZone: "America/Argentina/Buenos_Aires",
                     dateStyle: "short",
                     timeStyle: "short",
-                  })}: ${n.texto}`,
+                  })}: ${n.texto}  ·  nota: ${n.id.slice(0, 8)}`,
               )
               .join("\n")
           : "Sin notas todavía.";
@@ -372,6 +373,23 @@ const handler = createMcpHandler(
         return texto(
           `${describirTarea(r.tarea)}\n\nNotas (${notas.length}):\n${bitacora}`,
         );
+      },
+    );
+
+    server.registerTool(
+      "eliminar_nota",
+      {
+        title: "Eliminar nota",
+        description:
+          "Borra una nota de la bitácora de una tarea, por ejemplo si se cargó con un error. Necesita el id de la nota (los 8 caracteres que muestra ver_tarea después de 'nota:', o el id completo). Para corregir una nota: eliminarla y agregar la versión correcta con agregar_nota.",
+        inputSchema: z.object({
+          nota: z.string().describe("Id de la nota (8 caracteres o completo)."),
+        }),
+      },
+      async ({ nota }) => {
+        const r = await eliminarNota(nota);
+        if (!r.ok) return texto(r.error);
+        return texto(`Nota eliminada: "${r.nota.texto}"`);
       },
     );
 

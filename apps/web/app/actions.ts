@@ -6,6 +6,7 @@ import {
   agregarNota,
   agregarTarea,
   completarTarea,
+  eliminarNota,
 } from "@tablero/db";
 import type { Estado } from "@tablero/core";
 import { requireUser } from "../lib/auth";
@@ -52,6 +53,18 @@ export async function anotar(tareaId: string, texto: string) {
     return { ok: true };
   } catch (e) {
     return { ok: false, error: (e as Error).message };
+  }
+}
+
+export async function borrarNota(tareaId: string, notaId: string) {
+  await requireUser();
+  try {
+    const r = await eliminarNota(notaId);
+    if (!r.ok) return r;
+    revalidatePath(`/tareas/${tareaId}`);
+    return { ok: true as const };
+  } catch (e) {
+    return { ok: false as const, error: (e as Error).message };
   }
 }
 

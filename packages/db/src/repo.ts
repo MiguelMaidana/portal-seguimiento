@@ -436,6 +436,55 @@ export async function agregarNota(
   return resuelta;
 }
 
+/**
+ * Borra una nota. Acepta el id completo o su prefijo (los 8 caracteres que
+ * muestra ver_tarea). Solo toca eventos de tipo 'nota': el resto del log
+ * de eventos sigue siendo inmutable.
+ */
+export async function eliminarNota(
+  referencia: string,
+): Promise<{ ok: true; nota: Nota } | { ok: false; error: string }> {
+  const ref = referencia.trim().toLowerCase();
+  const esPrefijo = /^[0-9a-f]{8}$/.test(ref);
+  if (!esPrefijo && !UUID.test(ref)) {
+    return { ok: false, error: "El id de la nota no es válido." };
+  }
+
+  let q = db()
+    .from("eventos")
+    .select("id, tarea_id, payload, actor, created_at")
+    .eq("tipo", "nota");
+
+  // uuid no admite LIKE; para el prefijo de 8 caracteres filtramos por rango.
+  q = esPrefijo
+    ? q
+        .gte("id", `${ref}-0000-0000-0000-000000000000`)
+        .lte("id", `${ref}-ffff-ffff-ffff-ffffffffffff`)
+    : q.eq("id", ref);
+
+  const { data, error } = await q.limit(2);
+  if (error) throw new Error(`No se pudo buscar la nota: ${error.message}`);
+  if (!data || data.length === 0) return { ok: false, error: "No encontré esa nota." };
+  if (data.length > 1) {
+    return { ok: false, error: "Hay más de una nota con ese prefijo; pasá el id completo." };
+  }
+
+  const fila = data[0];
+  const { error: e2 } = await db().from("eventos").delete().eq("id", fila.id);
+  if (e2) throw new Error(`No se pudo eliminar la nota: ${e2.message}`);
+
+  return {
+    ok: true,
+    nota: {
+      id: fila.id as string,
+      tarea_id: fila.tarea_id as string,
+      texto: String((fila.payload as { texto?: string } | null)?.texto ?? ""),
+      actor: fila.actor as string,
+      created_at: fila.created_at as string,
+    },
+  };
+}
+
 /** Tarea por id exacto, para la ficha de la web. */
 export async function obtenerTarea(id: string): Promise<TareaExpandida | null> {
   if (!UUID.test(id)) return null;

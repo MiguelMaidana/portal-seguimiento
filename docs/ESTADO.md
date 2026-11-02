@@ -34,7 +34,7 @@ La versión 0 está implementada y publicada. El entorno local está probado con
 
 El endpoint publica `brief_del_dia`, `buscar_tareas`, `contexto_tablero`, `metricas`, `agregar_tarea`, `actualizar_tarea`, `completar_tarea` y `clasificar_inbox`.
 
-Además: `agregar_nota` (bitácora con fecha por tarea, append-only, guardada en `eventos` con tipo `nota`) y `ver_tarea` (ficha completa con notas). En la web, cada tarea tiene su ficha en `/tareas/<id>` con la bitácora y un formulario para agregar notas.
+Además: `agregar_nota`, `eliminar_nota` (bitácora con fecha por tarea, append-only, guardada en `eventos` con tipo `nota`) y `ver_tarea` (ficha completa con notas). En la web, cada tarea tiene su ficha en `/tareas/<id>` con la bitácora y un formulario para agregar notas.
 
 El endpoint exige `Authorization: Bearer <MCP_TOKEN>` o, para Claude web (que no permite headers en conectores), `?token=<MCP_TOKEN>` en la URL. Sin token responde `401`; sin la variable configurada responde `500`.
 
