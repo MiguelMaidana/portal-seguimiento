@@ -34,7 +34,7 @@ La versión 0 está implementada y publicada. El entorno local está probado con
 
 El endpoint publica `brief_del_dia`, `buscar_tareas`, `contexto_tablero`, `metricas`, `agregar_tarea`, `actualizar_tarea`, `completar_tarea` y `clasificar_inbox`.
 
-El endpoint exige `Authorization: Bearer <MCP_TOKEN>`. Sin token responde `401`; sin la variable configurada responde `500`.
+El endpoint exige `Authorization: Bearer <MCP_TOKEN>` o, para Claude web (que no permite headers en conectores), `?token=<MCP_TOKEN>` en la URL. Sin token responde `401`; sin la variable configurada responde `500`.
 
 ## Estado técnico verificado
 

@@ -433,8 +433,9 @@ const handler = createMcpHandler(
 // Autenticación
 //
 // Portal de un solo usuario: un bearer token estático alcanza y evita
-// montar un authorization server completo. El token va en la config del
-// conector. Si algún día lo compartís, esto hay que cambiarlo por OAuth.
+// montar un authorization server completo. El token va en el header
+// Authorization o, para Claude web, en ?token= de la URL del conector.
+// Si algún día lo compartís, esto hay que cambiarlo por OAuth.
 // ============================================================
 
 async function conAuth(req: Request): Promise<Response> {
@@ -447,8 +448,13 @@ async function conAuth(req: Request): Promise<Response> {
     );
   }
 
+  // El header es la vía normal (Claude Code, otros clientes). Claude web no
+  // permite cargar headers en un conector personalizado, así que también
+  // aceptamos el token como ?token=... en la URL.
   const header = req.headers.get("authorization") ?? "";
-  const recibido = header.replace(/^Bearer\s+/i, "");
+  const recibido =
+    header.replace(/^Bearer\s+/i, "") ||
+    (new URL(req.url).searchParams.get("token") ?? "");
 
   const esperadoBuffer = Buffer.from(esperado);
   const recibidoBuffer = Buffer.from(recibido);
