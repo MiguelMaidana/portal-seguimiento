@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import {
   actualizarTarea,
+  agregarNota,
   agregarTarea,
   completarTarea,
 } from "@tablero/db";
@@ -34,6 +35,20 @@ export async function marcarHecha(id: string) {
     await completarTarea(id, "web");
     revalidatePath("/");
     revalidatePath("/metricas");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
+export async function anotar(tareaId: string, texto: string) {
+  await requireUser();
+  const limpio = texto.trim();
+  if (!limpio) return { ok: false, error: "Escribí algo para guardar la nota." };
+
+  try {
+    await agregarNota(tareaId, limpio, "web");
+    revalidatePath(`/tareas/${tareaId}`);
     return { ok: true };
   } catch (e) {
     return { ok: false, error: (e as Error).message };

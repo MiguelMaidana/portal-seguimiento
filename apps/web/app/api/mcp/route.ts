@@ -14,13 +14,16 @@ import {
 } from "@tablero/core";
 import {
   actualizarTarea,
+  agregarNota,
   agregarTarea,
   buscarTareas,
   completarTarea,
   listarAreas,
+  listarNotas,
   listarPersonas,
   obtenerBrief,
   obtenerMetricas,
+  resolverTarea,
   type Resolucion,
 } from "@tablero/db";
 import { hoyLocal } from "@tablero/db/client";
@@ -318,6 +321,57 @@ const handler = createMcpHandler(
       async ({ tarea }) => {
         const r = await completarTarea(tarea, "chat");
         return formatearResolucion(r, "Marcada como hecha.");
+      },
+    );
+
+    server.registerTool(
+      "agregar_nota",
+      {
+        title: "Agregar nota",
+        description:
+          "Agrega una nota con fecha a la bitácora de una tarea: qué se habló en una reunión, avances, acuerdos, próximos pasos. Las notas se acumulan y nunca pisan a las anteriores. Usala en lugar de actualizar_tarea(detalle) cuando la idea es dejar registro de algo que pasó. La tarea se identifica por id o por parte del título.",
+        inputSchema: z.object({
+          tarea: z.string().describe("El id de la tarea o parte de su título."),
+          texto: z.string().min(1).describe("El contenido de la nota."),
+        }),
+      },
+      async ({ tarea, texto: contenido }) => {
+        const r = await agregarNota(tarea, contenido, "chat");
+        return formatearResolucion(r, "Nota agregada.");
+      },
+    );
+
+    server.registerTool(
+      "ver_tarea",
+      {
+        title: "Ver ficha de tarea",
+        description:
+          "Devuelve la ficha completa de una tarea: datos, detalle y la bitácora de notas con fecha (más recientes primero). Usala para '¿en qué quedó lo de UNACEM?' o antes de agregar una nota si necesitás contexto.",
+        inputSchema: z.object({
+          tarea: z.string().describe("El id de la tarea o parte de su título."),
+        }),
+      },
+      async ({ tarea }) => {
+        const r = await resolverTarea(tarea);
+        if (r.tipo !== "una") return formatearResolucion(r, "");
+
+        const notas = await listarNotas(r.tarea.id);
+        const bitacora = notas.length
+          ? notas
+              .map(
+                (n) =>
+                  `- ${new Date(n.created_at).toLocaleString("es-AR", {
+                    timeZone: "America/Argentina/Buenos_Aires",
+                    dateStyle: "short",
+                    timeStyle: "short",
+                  })}: ${n.texto}`,
+              )
+              .join("\n")
+          : "Sin notas todavía.";
+
+        return texto(
+          `${describirTarea(r.tarea)}\n\nNotas (${notas.length}):\n${bitacora}`,
+        );
       },
     );
 

@@ -90,6 +90,14 @@ export interface TareaExpandida extends Tarea {
   persona: string | null;
 }
 
+export interface Nota {
+  id: string;
+  tarea_id: string;
+  texto: string;
+  actor: string;
+  created_at: string;
+}
+
 export interface LineaBrief {
   id: string;
   titulo: string;

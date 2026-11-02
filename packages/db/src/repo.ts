@@ -4,6 +4,7 @@ import {
   type Area,
   type BuscarTareasInput,
   type LineaBrief,
+  type Nota,
   type Persona,
   type TareaExpandida,
   interpretarFecha,
@@ -377,6 +378,75 @@ export async function completarTarea(
   actor: "web" | "chat" = "web",
 ): Promise<Resolucion> {
   return actualizarTarea({ tarea: referencia, estado: "hecha" }, actor);
+}
+
+// ============================================================
+// Notas: bitácora append-only por tarea.
+//
+// Viven en `eventos` con tipo = 'nota' y el texto en payload.texto.
+// `eventos` ya es append-only y tiene tarea_id + created_at, así que
+// no hace falta una tabla aparte (y evita una migración).
+// ============================================================
+
+export async function listarNotas(tareaId: string): Promise<Nota[]> {
+  const { data, error } = await db()
+    .from("eventos")
+    .select("id, tarea_id, payload, actor, created_at")
+    .eq("tarea_id", tareaId)
+    .eq("tipo", "nota")
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(`No se pudieron leer las notas: ${error.message}`);
+
+  return (data ?? []).map((e) => ({
+    id: e.id as string,
+    tarea_id: e.tarea_id as string,
+    texto: String((e.payload as { texto?: string } | null)?.texto ?? ""),
+    actor: e.actor as string,
+    created_at: e.created_at as string,
+  }));
+}
+
+export async function agregarNota(
+  referencia: string,
+  texto: string,
+  actor: "web" | "chat" = "web",
+): Promise<Resolucion> {
+  const limpio = texto.trim();
+  if (!limpio) throw new Error("La nota está vacía.");
+
+  const resuelta = await resolverTarea(referencia);
+  if (resuelta.tipo !== "una") return resuelta;
+
+  const { error } = await db().from("eventos").insert({
+    tarea_id: resuelta.tarea.id,
+    tipo: "nota",
+    actor,
+    payload: { texto: limpio },
+  });
+
+  if (error) throw new Error(`No se pudo guardar la nota: ${error.message}`);
+
+  // Toca updated_at para que la tarea suba en los listados ordenados por actividad.
+  await db()
+    .from("tareas")
+    .update({ updated_at: new Date().toISOString() })
+    .eq("id", resuelta.tarea.id);
+
+  return resuelta;
+}
+
+/** Tarea por id exacto, para la ficha de la web. */
+export async function obtenerTarea(id: string): Promise<TareaExpandida | null> {
+  if (!UUID.test(id)) return null;
+  const { data, error } = await db()
+    .from("tareas")
+    .select(CAMPOS_EXPANDIDOS)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw new Error(`No se pudo leer la tarea: ${error.message}`);
+  return data ? expandir(data as unknown as FilaCruda) : null;
 }
 
 // ============================================================

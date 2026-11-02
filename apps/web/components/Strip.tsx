@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import {
   type LineaBrief,
@@ -53,7 +54,9 @@ export function Strip({ tarea }: { tarea: LineaBrief | TareaExpandida }) {
       />
 
       <div className="strip-body">
-        <span className="strip-title">{tarea.titulo}</span>
+        <Link href={`/tareas/${tarea.id}`} className="strip-title">
+          {tarea.titulo}
+        </Link>
 
         <div className="strip-meta narrow">
           {tarea.area && <span className="strip-area">{tarea.area}</span>}
