@@ -388,6 +388,28 @@ export async function completarTarea(
 // no hace falta una tabla aparte (y evita una migración).
 // ============================================================
 
+/**
+ * En este proyecto de Supabase los caracteres no ASCII dentro de
+ * eventos.payload (jsonb) vuelven como U+FFFD ("Reuni�n"), aunque en las
+ * columnas text (tareas.titulo) se guardan bien. Para no depender de eso,
+ * el texto de la nota se guarda URI-encodeado (ASCII puro) con enc: "uri".
+ */
+type PayloadNota = { texto?: string; enc?: string } | null;
+
+function codificarTexto(texto: string): PayloadNota {
+  return { texto: encodeURIComponent(texto), enc: "uri" };
+}
+
+function decodificarTexto(payload: PayloadNota): string {
+  const crudo = String(payload?.texto ?? "");
+  if (payload?.enc !== "uri") return crudo;
+  try {
+    return decodeURIComponent(crudo);
+  } catch {
+    return crudo;
+  }
+}
+
 export async function listarNotas(tareaId: string): Promise<Nota[]> {
   const { data, error } = await db()
     .from("eventos")
@@ -401,7 +423,7 @@ export async function listarNotas(tareaId: string): Promise<Nota[]> {
   return (data ?? []).map((e) => ({
     id: e.id as string,
     tarea_id: e.tarea_id as string,
-    texto: String((e.payload as { texto?: string } | null)?.texto ?? ""),
+    texto: decodificarTexto(e.payload as PayloadNota),
     actor: e.actor as string,
     created_at: e.created_at as string,
   }));
@@ -422,7 +444,7 @@ export async function agregarNota(
     tarea_id: resuelta.tarea.id,
     tipo: "nota",
     actor,
-    payload: { texto: limpio },
+    payload: codificarTexto(limpio),
   });
 
   if (error) throw new Error(`No se pudo guardar la nota: ${error.message}`);
@@ -478,7 +500,7 @@ export async function eliminarNota(
     nota: {
       id: fila.id as string,
       tarea_id: fila.tarea_id as string,
-      texto: String((fila.payload as { texto?: string } | null)?.texto ?? ""),
+      texto: decodificarTexto(fila.payload as PayloadNota),
       actor: fila.actor as string,
       created_at: fila.created_at as string,
     },
